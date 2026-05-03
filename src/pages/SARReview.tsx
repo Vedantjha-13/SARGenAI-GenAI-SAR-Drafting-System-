@@ -1,251 +1,97 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { mockCases, mockSARReports } from '../data/mockData';
-import Navbar from '../components/Navbar';
-import SAREditor from '../components/SAREditor';
-import ActionButtons from '../components/ActionButtons';
+import AppShell from '../components/layout/AppShell';
 
 export default function SARReview() {
-  const { caseId } = useParams();
-  const navigate = useNavigate();
-  const caseData = mockCases.find(c => c.id === caseId);
-  const sarReport = mockSARReports.find(r => r.caseId === caseId);
-  
-  const [editorContent, setEditorContent] = useState(
-    sarReport?.content || generateAISARContent(caseData)
-  );
-  const [isLoading, setIsLoading] = useState(false);
-  const [showVersionComparison, setShowVersionComparison] = useState(false);
-
-  if (!caseData) {
-    return (
-      <div className="min-h-screen bg-slate-950">
-        <Navbar />
-        <main className="max-w-7xl mx-auto px-4 py-8">
-          <p className="text-red-400">Case not found</p>
-          <button onClick={() => navigate('/dashboard')} className="btn-primary mt-4">
-            Back to Dashboard
-          </button>
-        </main>
-      </div>
-    );
-  }
-
-  const handleApprove = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      alert('SAR Report Approved! Redirecting to history...');
-      navigate('/history');
-    }, 1500);
-  };
-
-  const handleReject = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      alert('SAR Report Rejected. Case returned for regeneration.');
-      navigate(`/case/${caseId}`);
-    }, 1500);
-  };
-
-  const handleSaveEdit = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      alert('Draft saved successfully!');
-    }, 1000);
-  };
-
   return (
-    <div className="min-h-screen bg-slate-950">
-      <Navbar />
-      
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate(`/case/${caseId}`)}
-            className="text-blue-400 hover:text-blue-300 mb-4 transition-colors text-sm"
-          >
-            ← Back to Case
-          </button>
-          <h1 className="text-4xl font-bold text-white mb-2">Review SAR Report</h1>
-          <p className="text-slate-400">Case {caseId} • {caseData.userName}</p>
-        </div>
-
-        {/* Version Comparison Toggle */}
-        <div className="mb-6">
-          <button
-            onClick={() => setShowVersionComparison(!showVersionComparison)}
-            className="text-blue-400 hover:text-blue-300 transition-colors text-sm"
-          >
-            {showVersionComparison ? '▼' : '▶'} {' '}
-            View Version Comparison
-          </button>
-        </div>
-
-        {/* Split Screen Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Left Panel */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Transaction Summary */}
-            <div className="card">
-              <h3 className="text-lg font-semibold text-white mb-4">Transaction Summary</h3>
-              <div className="space-y-3">
-                <div className="p-3 bg-slate-800/50 rounded">
-                  <p className="text-slate-400 text-sm mb-1">Total Transactions</p>
-                  <p className="text-2xl font-bold text-white">{caseData.transactions.length}</p>
-                </div>
-                <div className="p-3 bg-slate-800/50 rounded">
-                  <p className="text-slate-400 text-sm mb-1">Suspicious Transactions</p>
-                  <p className="text-2xl font-bold text-red-400">
-                    {caseData.transactions.filter(t => t.suspicious).length}
-                  </p>
-                </div>
-                <div className="p-3 bg-slate-800/50 rounded">
-                  <p className="text-slate-400 text-sm mb-1">Total Amount</p>
-                  <p className="text-2xl font-bold text-blue-400">
-                    ${caseData.transactions
-                      .reduce((sum, t) => sum + t.amount, 0)
-                      .toLocaleString()}
-                  </p>
-                </div>
-              </div>
+    <AppShell
+      heading="Transaction Summary: Apex Global Holdings"
+      subheading="High-priority review with AI narrative assistance."
+      topNav={[
+        { label: 'Dashboard', to: '/dashboard' },
+        { label: 'Risk Monitor', to: '/risk-monitor' },
+        { label: 'Reports', to: '/history' },
+      ]}
+    >
+      <div className="grid grid-cols-12 gap-8">
+        <section className="col-span-12 space-y-6 lg:col-span-5">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl border border-outline-variant/20 bg-surface-container p-5">
+              <p className="text-[10px] uppercase tracking-[0.15em] text-on-surface-variant">Total Volume (30D)</p>
+              <p className="mt-2 text-2xl font-bold">$1,420,000.00</p>
             </div>
-
-            {/* Key Insights */}
-            <div className="card">
-              <h3 className="text-lg font-semibold text-white mb-4">Key Suspicious Insights</h3>
-              <ul className="space-y-2">
-                {caseData.suspiciousPatterns.map((pattern, idx) => (
-                  <li key={idx} className="flex gap-2">
-                    <span className="text-yellow-400 flex-shrink-0">◆</span>
-                    <span className="text-sm text-slate-300">{pattern}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Case Info */}
-            <div className="card">
-              <h3 className="text-lg font-semibold text-white mb-3">Case Info</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Case ID:</span>
-                  <span className="font-mono text-blue-400">{caseData.id}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Risk Score:</span>
-                  <span className={caseData.riskScore >= 75 ? 'text-red-400' : 'text-yellow-400'}>
-                    {caseData.riskScore}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Created:</span>
-                  <span className="text-slate-300">{caseData.createdAt}</span>
-                </div>
-              </div>
+            <div className="rounded-xl border border-outline-variant/20 bg-surface-container p-5">
+              <p className="text-[10px] uppercase tracking-[0.15em] text-on-surface-variant">Risk Score</p>
+              <p className="mt-2 text-2xl font-bold text-error">92/100</p>
             </div>
           </div>
 
-          {/* Right Panel */}
-          <div className="lg:col-span-2">
-            <div className="card h-full">
-              <SAREditor
-                initialContent={editorContent}
-                aiConfidence={sarReport?.aiConfidence || 82}
-                onContentChange={setEditorContent}
-              />
+          <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low p-6">
+            <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary">
+              <span className="material-symbols-outlined text-[16px]">lightbulb</span>
+              Key Suspicious Insights
+            </h3>
+            <ul className="mt-4 space-y-4 text-sm text-on-surface-variant">
+              <li className="flex gap-3"><span className="mt-1 h-2 w-2 rounded-full bg-error" />Rapid succession of 12 sub-threshold transfers ($9,500 each) over 48 hours.</li>
+              <li className="flex gap-3"><span className="mt-1 h-2 w-2 rounded-full bg-primary" />Beneficiary account was flagged in prior SAR filings for suspected layering.</li>
+              <li className="flex gap-3"><span className="mt-1 h-2 w-2 rounded-full bg-secondary" />Mismatch between declared business activity and digital asset liquidation patterns.</li>
+            </ul>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-outline-variant/20 bg-surface-container">
+            <div className="h-44 bg-[linear-gradient(120deg,#1d2026,#32353c)]" />
+            <div className="p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest">Flow Pattern Variance</p>
+              <p className="text-xs text-on-surface-variant">Detected anomalies: 14</p>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Version Comparison */}
-        {showVersionComparison && sarReport && (
-          <div className="card mb-8">
-            <h3 className="text-lg font-semibold text-white mb-4">Version Comparison</h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold text-slate-300 mb-3">Original (AI Generated - v{sarReport.version})</h4>
-                <div className="bg-slate-800/50 border border-slate-700 rounded p-4 max-h-64 overflow-y-auto">
-                  <p className="text-sm text-slate-300 font-mono whitespace-pre-wrap">{sarReport.content.substring(0, 500)}...</p>
-                </div>
+        <section className="col-span-12 flex min-h-[640px] flex-col overflow-hidden rounded-xl border border-outline-variant/20 bg-surface-container lg:col-span-7">
+          <div className="flex items-center justify-between border-b border-outline-variant/20 p-6 bg-surface-container-high">
+            <div className="flex items-center gap-4">
+              <div className="relative h-12 w-12">
+                <svg className="h-full w-full -rotate-90" viewBox="0 0 48 48">
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="#1d2026" strokeWidth="4" />
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="#98cbff" strokeDasharray="125.6" strokeDashoffset="22.6" strokeLinecap="round" strokeWidth="4" />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-primary">82%</span>
               </div>
               <div>
-                <h4 className="font-semibold text-slate-300 mb-3">Current Edit</h4>
-                <div className="bg-slate-800/50 border border-slate-700 rounded p-4 max-h-64 overflow-y-auto">
-                  <p className="text-sm text-slate-300 font-mono whitespace-pre-wrap">{editorContent.substring(0, 500)}...</p>
-                </div>
+                <h3 className="text-sm font-bold uppercase tracking-widest">AI Generated Draft</h3>
+                <p className="text-xs text-on-surface-variant">Confidence level: high confidence narrative</p>
               </div>
             </div>
+            <div className="flex gap-2 text-[10px] uppercase tracking-widest text-on-surface-variant">
+              <span className="rounded bg-surface-variant px-2 py-1">V3.0 Model</span>
+              <span className="rounded bg-surface-variant px-2 py-1">Draft #2</span>
+            </div>
           </div>
-        )}
 
-        {/* Action Buttons */}
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <ActionButtons
-              onApprove={handleApprove}
-              onReject={handleReject}
-              onSave={handleSaveEdit}
-              isLoading={isLoading}
-              size="lg"
+          <div className="flex items-center justify-between border-b border-outline-variant/20 p-4">
+            <div className="flex items-center gap-4 text-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px] hover:text-primary">format_bold</span>
+              <span className="material-symbols-outlined text-[18px] hover:text-primary">format_italic</span>
+              <span className="material-symbols-outlined text-[18px] hover:text-primary">format_list_bulleted</span>
+              <span className="material-symbols-outlined text-[18px] hover:text-primary">link</span>
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-tertiary">Auto-suggesting...</p>
+          </div>
+
+          <div className="flex-1 p-8">
+            <textarea
+              className="h-full min-h-[380px] w-full resize-none rounded-lg border border-outline-variant bg-surface-container-high p-5 text-base leading-relaxed text-on-surface outline-none focus:border-primary"
+              defaultValue={`Suspicious Activity Report: Narrative Section\n\nApex Global Holdings (the "Subject") has engaged in a series of transactions that lack apparent economic, business, or lawful purpose. Between June 14 and June 16, 2024, the Subject's primary checking account received a total of $114,000 via twelve separate wire transfers. Each transfer was intentionally kept below the $10,000 Currency Transaction Reporting threshold.\n\nFurther investigation into the originating entity, Omni-Node Solutions, reveals a lack of digital presence and an address associated with a commercial mail drop box. This pattern is consistent with structuring and layering behavior typically used to obfuscate the ultimate source of illicit funds.\n\nThe Subject attempted to move 85% of these funds into a known cryptocurrency exchange wallet within four hours of the final incoming wire, indicating high velocity movement designed to prevent institutional freezing of assets.`}
             />
           </div>
-        </div>
-      </main>
-    </div>
+
+          <div className="flex items-center justify-between border-t border-outline-variant/20 bg-surface-container-low p-6">
+            <button className="rounded-lg border border-outline-variant px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-on-surface-variant hover:bg-white/5">Save Edit</button>
+            <div className="flex gap-3">
+              <button className="rounded-lg border border-error/30 bg-error/10 px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-error hover:bg-error/20">Reject</button>
+              <button className="rounded-lg bg-gradient-to-br from-tertiary to-[#2fcf96] px-8 py-3 text-[11px] font-bold uppercase tracking-widest text-on-tertiary">Approve</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </AppShell>
   );
-}
-
-// Generate AI SAR Content
-function generateAISARContent(caseData: any) {
-  if (!caseData) return '';
-  
-  const date = new Date();
-  const formattedDate = date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-
-  return `SUSPICIOUS ACTIVITY REPORT (SAR)
-
-Financial Institution: Global Trust Bank
-Report Filed Date: ${formattedDate}
-
-ACCOUNT INFORMATION:
-Account Number: ${caseData.userId}
-Account Holder: ${caseData.userName}
-Account Type: ${caseData.accountType}
-Risk Score: ${caseData.riskScore}
-
-TRANSACTION SUMMARY:
-Total Transactions Reviewed: ${caseData.transactions.length}
-Suspicious Transactions Identified: ${caseData.transactions.filter((t: any) => t.suspicious).length}
-Total Transaction Amount: $${caseData.transactions.reduce((sum: number, t: any) => sum + t.amount, 0).toLocaleString()}
-
-DETAILED ANALYSIS:
-${caseData.suspiciousPatterns.map((pattern: string) => `• ${pattern}`).join('\n')}
-
-TRANSACTION DETAILS:
-${caseData.transactions
-  .filter((t: any) => t.suspicious)
-  .map((t: any) => `- ${t.id}: $${t.amount.toLocaleString()} (${t.date}) - ${t.description}`)
-  .join('\n')}
-
-FILING RATIONALE:
-Based on the analysis above, this activity meets the criteria for suspicious activity reporting due to:
-1. Pattern of high-value transactions inconsistent with historical account behavior
-2. Transfers to high-risk jurisdictions without clear business justification
-3. Lack of supporting documentation for stated purposes
-4. Account activity profile inconsistent with account type
-
-RECOMMENDATIONS:
-Further investigation and enhanced due diligence are recommended. Consider filing report with appropriate regulatory authorities.
-
-STATUS: PENDING REVIEW
-
-This report is generated by AI and requires human review and approval before filing.`;
 }
