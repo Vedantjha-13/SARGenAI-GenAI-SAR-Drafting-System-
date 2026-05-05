@@ -21,6 +21,7 @@ export default function App() {
         <Route path="/sar-review" element={<SARReview />} />
         <Route path="/entity-graph" element={<EntityGraph />} />
         <Route path="/case-detail" element={<CaseDetail />} />
+        <Route path="/case/:id" element={<CaseDetail />} />
         <Route path="/audit-ledger" element={<AuditLedger />} />
         <Route path="/system-settings" element={<SystemSettings />} />
         <Route path="/history" element={<History />} />

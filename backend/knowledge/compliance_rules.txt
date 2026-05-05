@@ -1,0 +1,18 @@
+SAR DRAFTING GUIDELINES
+
+1. Base every statement on verifiable case data only.
+2. Clearly identify unusual transaction patterns (velocity, structuring, geographic risk, counterparty anomalies).
+3. Include exact amounts, dates, and channels where provided.
+4. Avoid legal conclusions that are not supported by facts.
+5. Use neutral and professional language suitable for regulatory review.
+6. Explicitly call out missing data as INSUFFICIENT_INFORMATION.
+7. Separate observed facts from analyst interpretation.
+
+MINIMUM SAR SECTIONS
+
+- Subject
+- Activity Summary
+- Transactional Evidence
+- Risk Indicators
+- Filing Recommendation
+
