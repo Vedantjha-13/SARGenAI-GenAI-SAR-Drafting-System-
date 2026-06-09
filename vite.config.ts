@@ -8,8 +8,4 @@ export default defineConfig({
     port: 5173,
     open: false,
   },
-  optimizeDeps: {
-    noDiscovery: true,
-    include: [],
-  },
 });
