@@ -1,36 +1,36 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 from typing import Any
 
 from bson import ObjectId
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class SARReportModel(BaseModel):
+class UserRole(str, Enum):
+    analyst = "analyst"
+    supervisor = "supervisor"
+    admin = "admin"
+
+
+class UserModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     id: str | None = Field(default=None, alias="_id")
-    case_id: str
-    ai_generated_text: str
-    human_edited_text: str | None = None
-    status: str = "pending"
-    confidence_score: float = Field(default=0.0, ge=0.0, le=1.0)
-    retrieved_context: list[str] = Field(default_factory=list)
-    generation_metadata: dict[str, Any] = Field(default_factory=dict)
-    created_by: str | None = None
-    approved_by: str | None = None
-    rejected_by: str | None = None
-    rejection_reason: str | None = None
-    is_archived: bool = False
-    archived_at: datetime | None = None
+    oauth_provider: str = "local"
+    oauth_id: str
+    email: str
+    name: str
+    profile_picture: str | None = None
+    role: UserRole = UserRole.analyst
+    is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    approved_at: datetime | None = None
-    rejected_at: datetime | None = None
+    last_login: datetime | None = None
 
     @classmethod
-    def from_mongo(cls, document: dict[str, Any]) -> "SARReportModel":
+    def from_mongo(cls, document: dict[str, Any]) -> "UserModel":
         doc = document.copy()
         if "_id" in doc:
             doc["_id"] = str(doc["_id"])

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
+from backend.auth.rbac import require_role
+from backend.models.user_model import UserModel, UserRole
 from backend.schemas.response_schemas import CaseDetailResponse, CaseSummaryResponse
 from backend.services.case_service import CaseService
 
@@ -16,6 +18,7 @@ def get_case_service(request: Request) -> CaseService:
 async def get_cases(
     limit: int = Query(default=100, ge=1, le=500),
     skip: int = Query(default=0, ge=0),
+    _: UserModel = Depends(require_role(UserRole.analyst)),
     case_service: CaseService = Depends(get_case_service),
 ) -> list[CaseSummaryResponse]:
     cases = await case_service.list_cases(limit=limit, skip=skip)
@@ -35,6 +38,7 @@ async def get_cases(
 @router.get("/case/{case_id}", response_model=CaseDetailResponse)
 async def get_case(
     case_id: str,
+    _: UserModel = Depends(require_role(UserRole.analyst)),
     case_service: CaseService = Depends(get_case_service),
 ) -> CaseDetailResponse:
     case = await case_service.get_case_by_id(case_id)
@@ -53,4 +57,3 @@ async def get_case(
         created_at=case.created_at,
         updated_at=case.updated_at,
     )
-

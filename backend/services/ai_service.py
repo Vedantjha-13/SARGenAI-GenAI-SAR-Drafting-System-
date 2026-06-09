@@ -6,11 +6,14 @@ from bson import ObjectId
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
+from pymongo import DESCENDING
 
 from backend.config import Settings
 from backend.db.connection import mongo_manager
 from backend.models.case_model import CaseModel
 from backend.models.sar_model import SARReportModel
+from backend.models.user_model import UserModel
+from backend.services.audit_service import AuditService
 from backend.services.rag_service import RAGService
 
 
@@ -21,9 +24,15 @@ class SARGenerationOutput(BaseModel):
 
 
 class AIService:
-    def __init__(self, settings: Settings, rag_service: RAGService) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        rag_service: RAGService,
+        audit_service: AuditService | None = None,
+    ) -> None:
         self._settings = settings
         self._rag_service = rag_service
+        self._audit_service = audit_service
         self._prompt = ChatPromptTemplate.from_messages(
             [
                 (
@@ -50,7 +59,13 @@ class AIService:
             ]
         )
 
-    async def generate_sar(self, case: CaseModel, analyst_notes: str | None = None) -> SARReportModel:
+    async def generate_sar(
+        self,
+        case: CaseModel,
+        analyst_notes: str | None = None,
+        created_by: UserModel | None = None,
+        generation_overrides: dict | None = None,
+    ) -> SARReportModel:
         if not self._settings.openai_api_key:
             raise RuntimeError("OPENAI_API_KEY is not configured.")
 
@@ -84,7 +99,9 @@ class AIService:
                 "model": self._settings.openai_model,
                 "rationale": result.rationale,
                 "generated_at": now.isoformat(),
+                **(generation_overrides or {}),
             },
+            created_by=created_by.id if created_by else None,
             status="pending",
             created_at=now,
             updated_at=now,
@@ -92,18 +109,61 @@ class AIService:
 
         inserted = await mongo_manager.sar_reports.insert_one(report.to_mongo())
         report.id = str(inserted.inserted_id)
+        if created_by and self._audit_service:
+            await self._audit_service.log_event(
+                user=created_by,
+                action="sar.generated",
+                sar_id=report.id,
+                case_id=report.case_id,
+                after_state=self._serialize_report(report),
+                details={"analyst_notes_present": bool(analyst_notes)},
+            )
         return report
 
-    async def get_sar_by_id(self, sar_id: str) -> SARReportModel | None:
+    async def get_sar_by_id(self, sar_id: str, include_archived: bool = True) -> SARReportModel | None:
         if not ObjectId.is_valid(sar_id):
             return None
-        document = await mongo_manager.sar_reports.find_one({"_id": ObjectId(sar_id)})
+        query: dict[str, object] = {"_id": ObjectId(sar_id)}
+        if not include_archived:
+            query["is_archived"] = {"$ne": True}
+        document = await mongo_manager.sar_reports.find_one(query)
         if not document:
             return None
         return SARReportModel.from_mongo(document)
 
-    async def update_sar(self, sar_id: str, human_edited_text: str) -> SARReportModel | None:
+    async def list_sars(
+        self,
+        *,
+        status: str | None = None,
+        created_by: str | None = None,
+        limit: int = 100,
+        skip: int = 0,
+        include_archived: bool = False,
+    ) -> tuple[list[SARReportModel], int]:
+        query: dict[str, object] = {}
+        if not include_archived:
+            query["is_archived"] = {"$ne": True}
+        if status:
+            query["status"] = status
+        if created_by:
+            query["created_by"] = created_by
+
+        cursor = mongo_manager.sar_reports.find(query).sort("created_at", DESCENDING).skip(skip).limit(limit)
+        documents = await cursor.to_list(length=limit)
+        total = await mongo_manager.sar_reports.count_documents(query)
+        return [SARReportModel.from_mongo(doc) for doc in documents], total
+
+    async def update_sar(
+        self,
+        sar_id: str,
+        human_edited_text: str,
+        acting_user: UserModel | None = None,
+    ) -> SARReportModel | None:
         if not ObjectId.is_valid(sar_id):
+            return None
+
+        existing = await self.get_sar_by_id(sar_id)
+        if not existing:
             return None
 
         now = datetime.utcnow()
@@ -114,10 +174,29 @@ class AIService:
             }
         }
         await mongo_manager.sar_reports.update_one({"_id": ObjectId(sar_id)}, update)
-        return await self.get_sar_by_id(sar_id)
+        report = await self.get_sar_by_id(sar_id)
+        if report and acting_user and self._audit_service:
+            await self._audit_service.log_event(
+                user=acting_user,
+                action="sar.updated",
+                sar_id=report.id,
+                case_id=report.case_id,
+                before_state=self._serialize_report(existing),
+                after_state=self._serialize_report(report),
+            )
+        return report
 
-    async def approve_sar(self, sar_id: str, approved_by: str | None = None) -> SARReportModel | None:
+    async def approve_sar(
+        self,
+        sar_id: str,
+        approved_by: str | None = None,
+        acting_user: UserModel | None = None,
+    ) -> SARReportModel | None:
         if not ObjectId.is_valid(sar_id):
+            return None
+
+        existing = await self.get_sar_by_id(sar_id)
+        if not existing:
             return None
 
         now = datetime.utcnow()
@@ -130,15 +209,30 @@ class AIService:
             }
         }
         await mongo_manager.sar_reports.update_one({"_id": ObjectId(sar_id)}, update)
-        return await self.get_sar_by_id(sar_id)
+        report = await self.get_sar_by_id(sar_id)
+        if report and acting_user and self._audit_service:
+            await self._audit_service.log_event(
+                user=acting_user,
+                action="sar.approved",
+                sar_id=report.id,
+                case_id=report.case_id,
+                before_state=self._serialize_report(existing),
+                after_state=self._serialize_report(report),
+            )
+        return report
 
     async def reject_sar(
         self,
         sar_id: str,
         rejected_by: str | None = None,
         rejection_reason: str | None = None,
+        acting_user: UserModel | None = None,
     ) -> SARReportModel | None:
         if not ObjectId.is_valid(sar_id):
+            return None
+
+        existing = await self.get_sar_by_id(sar_id)
+        if not existing:
             return None
 
         now = datetime.utcnow()
@@ -152,7 +246,56 @@ class AIService:
             }
         }
         await mongo_manager.sar_reports.update_one({"_id": ObjectId(sar_id)}, update)
-        return await self.get_sar_by_id(sar_id)
+        report = await self.get_sar_by_id(sar_id)
+        if report and acting_user and self._audit_service:
+            await self._audit_service.log_event(
+                user=acting_user,
+                action="sar.rejected",
+                sar_id=report.id,
+                case_id=report.case_id,
+                before_state=self._serialize_report(existing),
+                after_state=self._serialize_report(report),
+            )
+        return report
+
+    async def archive_sar(
+        self,
+        sar_id: str,
+        acting_user: UserModel | None = None,
+    ) -> SARReportModel | None:
+        if not ObjectId.is_valid(sar_id):
+            return None
+
+        existing = await self.get_sar_by_id(sar_id)
+        if not existing:
+            return None
+
+        now = datetime.utcnow()
+        await mongo_manager.sar_reports.update_one(
+            {"_id": ObjectId(sar_id)},
+            {
+                "$set": {
+                    "is_archived": True,
+                    "archived_at": now,
+                    "updated_at": now,
+                }
+            },
+        )
+        report = await self.get_sar_by_id(sar_id)
+        if report and acting_user and self._audit_service:
+            await self._audit_service.log_event(
+                user=acting_user,
+                action="sar.archived",
+                sar_id=report.id,
+                case_id=report.case_id,
+                before_state=self._serialize_report(existing),
+                after_state=self._serialize_report(report),
+            )
+        return report
+
+    @staticmethod
+    def _serialize_report(report: SARReportModel) -> dict:
+        return report.model_dump(mode="json")
 
     @staticmethod
     def _format_case_facts(case: CaseModel) -> str:
@@ -175,4 +318,3 @@ class AIService:
             f"narrative_context={case.narrative_context or 'N/A'}\n"
             f"transactions:\n{transactions_text}"
         )
-

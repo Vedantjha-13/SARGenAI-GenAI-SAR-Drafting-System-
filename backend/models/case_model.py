@@ -32,6 +32,7 @@ class CaseModel(BaseModel):
     narrative_context: str | None = None
     transactions: list[TransactionModel] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
+    created_by: str | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -49,4 +50,3 @@ class CaseModel(BaseModel):
         else:
             doc.pop("_id", None)
         return doc
-

@@ -18,6 +18,9 @@ class MongoConnectionManager:
         self._client = AsyncIOMotorClient(self._settings.mongo_uri)
         self._database = self._client[self._settings.mongo_db_name]
         await self._client.admin.command("ping")
+        from backend.db.migrations import create_indexes
+
+        await create_indexes()
 
     async def disconnect(self) -> None:
         if self._client is None:
@@ -40,6 +43,13 @@ class MongoConnectionManager:
     def sar_reports(self) -> AsyncIOMotorCollection:
         return self.database["sar_reports"]
 
+    @property
+    def users(self) -> AsyncIOMotorCollection:
+        return self.database["users"]
+
+    @property
+    def audit_logs(self) -> AsyncIOMotorCollection:
+        return self.database["audit_logs"]
+
 
 mongo_manager = MongoConnectionManager(get_settings())
-

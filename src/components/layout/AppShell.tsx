@@ -1,13 +1,14 @@
-import { Link, useLocation } from 'react-router-dom';
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
 const navItems = [
-  { label: 'Intelligence Feed', to: '/intelligence-feed', icon: 'dynamic_feed' },
-  { label: 'SAR Queue', to: '/sar-review', icon: 'assignment_late' },
-  { label: 'Entity Graph', to: '/entity-graph', icon: 'account_tree' },
-  { label: 'Case Manager', to: '/case-detail', icon: 'folder_shared' },
-  { label: 'Audit Ledger', to: '/audit-ledger', icon: 'history_edu' },
-  { label: 'System Settings', to: '/system-settings', icon: 'settings' },
+  { label: "Intelligence Feed", to: "/intelligence-feed", icon: "dynamic_feed" },
+  { label: "SAR Queue", to: "/sar-review", icon: "assignment_late" },
+  { label: "Entity Graph", to: "/entity-graph", icon: "account_tree" },
+  { label: "Case Manager", to: "/dashboard", icon: "folder_shared" },
+  { label: "Audit Ledger", to: "/audit-ledger", icon: "history_edu" },
+  { label: "System Settings", to: "/system-settings", icon: "settings" },
 ] as const;
 
 interface TopNavItem {
@@ -24,6 +25,13 @@ interface AppShellProps {
 
 export default function AppShell({ children, heading, subheading, topNav = [] }: AppShellProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+
+  const onLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <div className="min-h-screen bg-background text-on-surface selection:bg-primary/20">
@@ -34,7 +42,7 @@ export default function AppShell({ children, heading, subheading, topNav = [] }:
         </div>
 
         <div className="px-4 pb-4">
-          <Link to="/sar-report?source=dataset" className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-primary to-primary-container py-3 text-xs font-bold uppercase tracking-widest text-on-primary">
+          <Link to="/sar-report" className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-primary to-primary-container py-3 text-xs font-bold uppercase tracking-widest text-on-primary">
             <span className="material-symbols-outlined text-[18px]">add</span>
             New Draft Report
           </Link>
@@ -49,8 +57,8 @@ export default function AppShell({ children, heading, subheading, topNav = [] }:
                 to={item.to}
                 className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm transition-all ${
                   active
-                    ? 'bg-slate-800/60 font-semibold text-primary shadow-[0_0_15px_rgba(152,203,255,0.1)]'
-                    : 'text-on-surface-variant hover:bg-slate-800/40 hover:text-on-surface'
+                    ? "bg-slate-800/60 font-semibold text-primary shadow-[0_0_15px_rgba(152,203,255,0.1)]"
+                    : "text-on-surface-variant hover:bg-slate-800/40 hover:text-on-surface"
                 }`}
               >
                 <span className="material-symbols-outlined">{item.icon}</span>
@@ -61,7 +69,7 @@ export default function AppShell({ children, heading, subheading, topNav = [] }:
         </nav>
 
         <div className="space-y-2 border-t border-white/10 p-4">
-          <Link to="/sar-report?source=dataset" className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-primary to-primary-container py-3 text-xs font-bold uppercase tracking-widest text-on-primary">
+          <Link to="/sar-report" className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-br from-primary to-primary-container py-3 text-xs font-bold uppercase tracking-widest text-on-primary">
             <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
             Generate New SAR
           </Link>
@@ -116,11 +124,26 @@ export default function AppShell({ children, heading, subheading, topNav = [] }:
         </div>
 
         <div className="flex items-center gap-3">
+          <div className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-right md:block">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-on-surface">
+              {user?.name || "Unknown User"}
+            </p>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-on-surface-variant">
+              {user?.role || "guest"}
+            </p>
+          </div>
           <button className="rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-on-surface">
             <span className="material-symbols-outlined">notifications</span>
           </button>
           <button className="rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-on-surface">
             <span className="material-symbols-outlined">account_circle</span>
+          </button>
+          <button
+            className="rounded-lg border border-white/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-on-surface-variant transition hover:bg-white/5 hover:text-on-surface"
+            onClick={onLogout}
+            type="button"
+          >
+            Logout
           </button>
         </div>
       </header>
