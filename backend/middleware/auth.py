@@ -32,6 +32,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         # Allow CORS preflight requests and exempt paths
+        print("PATH =", request.url.path)
         if request.method == "OPTIONS" or request.url.path in self._settings.auth_exempt_paths or request.url.path.startswith("/docs") or request.url.path.startswith("/openapi"):
             return await call_next(request)
 
