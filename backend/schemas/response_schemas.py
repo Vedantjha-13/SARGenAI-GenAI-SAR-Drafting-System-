@@ -3,8 +3,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-frommodels.case_model import TransactionModel
-frommodels.user_model import UserRole
+from models.case_model import TransactionModel
+from models.user_model import UserRole
 
 
 class CaseSummaryResponse(BaseModel):

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-fromauth.rbac import require_role
-frommodels.user_model import UserModel, UserRole
-fromschemas.response_schemas import CaseDetailResponse, CaseSummaryResponse
-fromservices.case_service import CaseService
+from auth.rbac import require_role
+from models.user_model import UserModel, UserRole
+from schemas.response_schemas import CaseDetailResponse, CaseSummaryResponse
+from services.case_service import CaseService
 
 router = APIRouter(tags=["Cases"])
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 from bson import ObjectId
 from pymongo import DESCENDING
 
-fromdb.connection import mongo_manager
-frommodels.case_model import CaseModel
+from db.connection import mongo_manager
+from models.case_model import CaseModel
 
 
 class CaseService:

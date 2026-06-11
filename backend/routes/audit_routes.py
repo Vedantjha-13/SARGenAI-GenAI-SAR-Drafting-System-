@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query, Request
 
-fromauth.rbac import require_role
-frommodels.user_model import UserModel, UserRole
-fromschemas.response_schemas import AuditLogResponse
-fromservices.audit_service import AuditService
+from auth.rbac import require_role
+from models.user_model import UserModel, UserRole
+from schemas.response_schemas import AuditLogResponse
+from services.audit_service import AuditService
 
 router = APIRouter(tags=["Audit"])
 

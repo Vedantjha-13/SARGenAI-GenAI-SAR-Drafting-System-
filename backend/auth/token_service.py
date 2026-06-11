@@ -7,8 +7,8 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-fromconfig import Settings
-frommodels.user_model import UserModel
+from config import Settings
+from models.user_model import UserModel
 
 
 class TokenDecodeError(ValueError):

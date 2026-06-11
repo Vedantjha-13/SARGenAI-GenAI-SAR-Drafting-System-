@@ -4,7 +4,7 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-frommodels.user_model import UserRole
+from models.user_model import UserRole
 
 
 HTML_TAG_PATTERN = re.compile(r"<[^>]+>")

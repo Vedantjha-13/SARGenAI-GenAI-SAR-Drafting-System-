@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-fromdb.connection import mongo_manager
+from db.connection import mongo_manager
 
 
 AUDIT_LOG_TTL_SECONDS = 90 * 24 * 60 * 60
