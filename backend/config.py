@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     api_prefix: str = ""
     log_level: str = "INFO"
 
-    mongo_uri: str = "mongodb+srv://<db_username>:JAkqnwzNzohtcLpO@sarcluster.cygwnw0.mongodb.net/?appName=SARCluster"
+    mongo_uri: str = "mongodb+srv://vedantsharma13315_db_user:JAkqnwzNzohtcLpO@sarcluster.cygwnw0.mongodb.net/?appName=SARCluster"
     mongo_db_name: str = "SAR_system"
 
     openai_api_key: str | None = None
