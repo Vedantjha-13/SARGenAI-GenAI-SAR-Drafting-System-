@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.config import get_settings
+from config import get_settings
 from backend.db.connection import mongo_manager
 from backend.exceptions.error_responses import AppError, build_error_content
 from backend.middleware.auth import AuthMiddleware
