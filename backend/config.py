@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     api_prefix: str = ""
     log_level: str = "INFO"
 
-    mongo_uri: str = "mongodb://localhost:27017"
-    mongo_db_name: str = "sar_system"
+    mongo_uri: str = "mongodb+srv://<db_username>:JAkqnwzNzohtcLpO@sarcluster.cygwnw0.mongodb.net/?appName=SARCluster"
+    mongo_db_name: str = "SAR_system"
 
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1-mini"

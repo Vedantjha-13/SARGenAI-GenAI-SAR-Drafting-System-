@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
-MONGO_URI = "mongodb://localhost:27017"
-DB_NAME = "sar_system"
+MONGO_URI = "mongodb+srv://<db_username>:JAkqnwzNzohtcLpO@sarcluster.cygwnw0.mongodb.net/?appName=SARCluster"
+DB_NAME = "SAR_system"
 
 
 async def main() -> None:
