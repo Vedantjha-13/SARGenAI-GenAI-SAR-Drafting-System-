@@ -5,13 +5,13 @@ from datetime import datetime
 from bson import ObjectId
 from fastapi import APIRouter, Depends, status
 
-from backend.auth.rbac import get_current_user
-from backend.auth.token_service import TokenService
-from backend.config import get_settings
-from backend.db.connection import mongo_manager
-from backend.models.user_model import UserModel
-from backend.schemas.request_schemas import LoginRequest
-from backend.schemas.response_schemas import AuthTokenResponse, UserResponse
+fromauth.rbac import get_current_user
+fromauth.token_service import TokenService
+fromconfig import get_settings
+fromdb.connection import mongo_manager
+frommodels.user_model import UserModel
+fromschemas.request_schemas import LoginRequest
+fromschemas.response_schemas import AuthTokenResponse, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 

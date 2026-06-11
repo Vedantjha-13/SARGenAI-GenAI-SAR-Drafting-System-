@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from backend.db.connection import mongo_manager
-from backend.models.audit_log_model import AuditLogModel
-from backend.models.user_model import UserModel
+fromdb.connection import mongo_manager
+frommodels.audit_log_model import AuditLogModel
+frommodels.user_model import UserModel
 
 
 class AuditService:

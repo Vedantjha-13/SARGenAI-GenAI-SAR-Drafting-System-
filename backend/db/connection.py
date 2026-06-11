@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
-from backend.config import Settings, get_settings
+fromconfig import Settings, get_settings
 
 
 class MongoConnectionManager:
@@ -18,7 +18,7 @@ class MongoConnectionManager:
         self._client = AsyncIOMotorClient(self._settings.mongo_uri)
         self._database = self._client[self._settings.mongo_db_name]
         await self._client.admin.command("ping")
-        from backend.db.migrations import create_indexes
+        fromdb.migrations import create_indexes
 
         await create_indexes()
 

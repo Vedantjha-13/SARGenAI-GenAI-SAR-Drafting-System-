@@ -10,13 +10,13 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 from pymongo import DESCENDING
 
-from backend.config import Settings
-from backend.db.connection import mongo_manager
-from backend.models.case_model import CaseModel
-from backend.models.sar_model import SARReportModel
-from backend.models.user_model import UserModel
-from backend.services.audit_service import AuditService
-from backend.services.rag_service import RAGService
+fromconfig import Settings
+fromdb.connection import mongo_manager
+frommodels.case_model import CaseModel
+frommodels.sar_model import SARReportModel
+frommodels.user_model import UserModel
+fromservices.audit_service import AuditService
+fromservices.rag_service import RAGService
 
 logger = logging.getLogger(__name__)
 

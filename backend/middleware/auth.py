@@ -5,10 +5,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from backend.auth.token_service import TokenDecodeError, TokenService
-from backend.config import Settings
-from backend.db.connection import mongo_manager
-from backend.models.user_model import UserModel
+fromauth.token_service import TokenDecodeError, TokenService
+fromconfig import Settings
+fromdb.connection import mongo_manager
+frommodels.user_model import UserModel
 
 
 def _error_response(status_code: int, code: str, message: str) -> JSONResponse:

@@ -9,17 +9,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from config import get_settings
-from backend.db.connection import mongo_manager
-from backend.exceptions.error_responses import AppError, build_error_content
-from backend.middleware.auth import AuthMiddleware
-from backend.routes.audit_routes import router as audit_router
-from backend.routes.auth_routes import router as auth_router
-from backend.routes.case_routes import router as case_router
-from backend.routes.sar_routes import router as sar_router
-from backend.services.ai_service import AIService
-from backend.services.audit_service import AuditService
-from backend.services.case_service import CaseService
-from backend.services.rag_service import RAGService
+from db.connection import mongo_manager
+from exceptions.error_responses import AppError, build_error_content
+from middleware.auth import AuthMiddleware
+from routes.audit_routes import router as audit_router
+from routes.auth_routes import router as auth_router
+from routes.case_routes import router as case_router
+from routes.sar_routes import router as sar_router
+from services.ai_service import AIService
+from services.audit_service import AuditService
+from services.case_service import CaseService
+from services.rag_service import RAGService
 
 settings = get_settings()
 logging.basicConfig(

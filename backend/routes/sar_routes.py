@@ -4,26 +4,26 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from backend.auth.rbac import require_role
-from backend.exceptions.error_responses import AppError
-from backend.models.sar_model import SARReportModel
-from backend.models.user_model import UserModel, UserRole
-from backend.schemas.request_schemas import (
+fromauth.rbac import require_role
+fromexceptions.error_responses import AppError
+frommodels.sar_model import SARReportModel
+frommodels.user_model import UserModel, UserRole
+fromschemas.request_schemas import (
     ApproveSARRequest,
     GenerateSARRequest,
     RegenerateSARRequest,
     RejectSARRequest,
     UpdateSARRequest,
 )
-from backend.schemas.response_schemas import (
+fromschemas.response_schemas import (
     GenerateSARResponse,
     OperationStatusResponse,
     PaginatedSARResponse,
     SARReportResponse,
     SARSummaryResponse,
 )
-from backend.services.ai_service import AIService
-from backend.services.case_service import CaseService
+fromservices.ai_service import AIService
+fromservices.case_service import CaseService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["SAR"])

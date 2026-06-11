@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from fastapi import Depends, Request
 
-from backend.exceptions.error_responses import AppError
-from backend.models.user_model import UserModel, UserRole
+fromexceptions.error_responses import AppError
+frommodels.user_model import UserModel, UserRole
 
 
 ROLE_PRIORITY: dict[UserRole, int] = {

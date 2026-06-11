@@ -9,7 +9,7 @@ from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from backend.config import Settings
+fromconfig import Settings
 
 logger = logging.getLogger(__name__)
 
