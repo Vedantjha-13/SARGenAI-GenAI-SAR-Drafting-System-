@@ -1,11 +1,25 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+BACKEND_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BACKEND_DIR.parent
+
+
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=(
+            str(PROJECT_ROOT / ".env"),
+            str(BACKEND_DIR / ".env"),
+            str(BACKEND_DIR / ".env file"),
+        ),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     app_name: str = "GenAI SAR Auto-Drafting Backend"
     api_prefix: str = ""
@@ -18,8 +32,8 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4.1-mini"
     openai_embedding_model: str = "text-embedding-3-large"
 
-    rag_index_dir: str = "backend/.faiss_index"
-    rag_knowledge_path: str = "backend/knowledge/compliance_rules.txt"
+    rag_index_dir: str = str(BACKEND_DIR / ".faiss_index")
+    rag_knowledge_path: str = str(BACKEND_DIR / "knowledge" / "compliance_rules.txt")
     rag_top_k: int = Field(default=4, ge=1, le=10)
 
     auth_secret_key: str = "development-secret-key"
@@ -30,6 +44,14 @@ class Settings(BaseSettings):
     google_oauth_client_secret: str | None = None
     github_oauth_client_id: str | None = None
     github_oauth_client_secret: str | None = None
+
+    @field_validator("openai_model")
+    @classmethod
+    def normalize_openai_model(cls, value: str) -> str:
+        normalized = value.strip()
+        if normalized in {"gpt-4-mini", "gpt-4"}:
+            return "gpt-4.1-mini"
+        return normalized
 
 
 @lru_cache(maxsize=1)

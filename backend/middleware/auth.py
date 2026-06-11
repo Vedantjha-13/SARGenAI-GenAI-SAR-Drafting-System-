@@ -31,7 +31,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         self._token_service = TokenService(settings)
 
     async def dispatch(self, request: Request, call_next):
-        if request.url.path in self._settings.auth_exempt_paths or request.url.path.startswith("/docs") or request.url.path.startswith("/openapi"):
+        # Allow CORS preflight requests and exempt paths
+        if request.method == "OPTIONS" or request.url.path in self._settings.auth_exempt_paths or request.url.path.startswith("/docs") or request.url.path.startswith("/openapi"):
             return await call_next(request)
 
         authorization = request.headers.get("Authorization", "")

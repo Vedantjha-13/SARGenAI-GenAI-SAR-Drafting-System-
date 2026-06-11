@@ -31,20 +31,34 @@ class RAGService:
         )
 
         if index_dir.exists():
-            logger.info("Loading existing FAISS index from %s", index_dir)
-            self._vector_store = await asyncio.to_thread(
-                FAISS.load_local,
-                str(index_dir),
-                embeddings,
-                allow_dangerous_deserialization=True,
-            )
-            return
+            try:
+                logger.info("Loading existing FAISS index from %s", index_dir)
+                self._vector_store = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        FAISS.load_local,
+                        str(index_dir),
+                        embeddings,
+                        allow_dangerous_deserialization=True,
+                    ),
+                    timeout=30,
+                )
+                return
+            except Exception as exc:
+                logger.warning("Unable to load FAISS index from %s: %s", index_dir, exc)
+                self._vector_store = None
 
-        logger.info("Building FAISS index from knowledge base")
-        documents = self._build_documents()
-        self._vector_store = await asyncio.to_thread(FAISS.from_documents, documents, embeddings)
-        index_dir.mkdir(parents=True, exist_ok=True)
-        await asyncio.to_thread(self._vector_store.save_local, str(index_dir))
+        try:
+            logger.info("Building FAISS index from knowledge base")
+            documents = self._build_documents()
+            self._vector_store = await asyncio.wait_for(
+                asyncio.to_thread(FAISS.from_documents, documents, embeddings),
+                timeout=60,
+            )
+            index_dir.mkdir(parents=True, exist_ok=True)
+            await asyncio.wait_for(asyncio.to_thread(self._vector_store.save_local, str(index_dir)), timeout=30)
+        except Exception as exc:
+            logger.warning("RAG initialization skipped; using empty retrieval context: %s", exc)
+            self._vector_store = None
 
     async def retrieve_context(self, query: str, k: int | None = None) -> list[str]:
         if self._vector_store is None:

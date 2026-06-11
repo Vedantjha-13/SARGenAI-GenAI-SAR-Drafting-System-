@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import logging
 from datetime import datetime
 
 from bson import ObjectId
@@ -15,6 +17,8 @@ from backend.models.sar_model import SARReportModel
 from backend.models.user_model import UserModel
 from backend.services.audit_service import AuditService
 from backend.services.rag_service import RAGService
+
+logger = logging.getLogger(__name__)
 
 
 class SARGenerationOutput(BaseModel):
@@ -74,20 +78,43 @@ class AIService:
         )
         compliance_text = "\n\n".join(compliance_context) if compliance_context else "No context retrieved."
 
-        llm = ChatOpenAI(
-            model=self._settings.openai_model,
-            api_key=self._settings.openai_api_key,
-            temperature=0,
-        ).with_structured_output(SARGenerationOutput)
+        try:
+            llm = ChatOpenAI(
+                model=self._settings.openai_model,
+                api_key=self._settings.openai_api_key,
+                temperature=0,
+            ).with_structured_output(SARGenerationOutput)
 
-        chain = self._prompt | llm
-        result = await chain.ainvoke(
-            {
-                "case_facts": self._format_case_facts(case),
-                "compliance_context": compliance_text,
-                "analyst_notes": analyst_notes or "None",
-            }
-        )
+            chain = self._prompt | llm
+            result = await asyncio.wait_for(
+                chain.ainvoke(
+                    {
+                        "case_facts": self._format_case_facts(case),
+                        "compliance_context": compliance_text,
+                        "analyst_notes": analyst_notes or "None",
+                    }
+                ),
+                timeout=90,
+            )
+            generation_source = "openai"
+            fallback_reason = None
+        except Exception as exc:
+            logger.warning("OpenAI SAR generation failed; using local fallback: %s", exc)
+            result = SARGenerationOutput(
+                sar_draft=self._build_fallback_draft(
+                    case=case,
+                    analyst_notes=analyst_notes,
+                    compliance_context=compliance_context,
+                ),
+                confidence_score=self._fallback_confidence(
+                    case=case,
+                    analyst_notes=analyst_notes,
+                    compliance_context=compliance_context,
+                ),
+                rationale="Local SAR draft generated because the OpenAI call was unavailable.",
+            )
+            generation_source = "fallback"
+            fallback_reason = str(exc)
 
         now = datetime.utcnow()
         report = SARReportModel(
@@ -99,6 +126,8 @@ class AIService:
                 "model": self._settings.openai_model,
                 "rationale": result.rationale,
                 "generated_at": now.isoformat(),
+                "source": generation_source,
+                **({"fallback_reason": fallback_reason} if fallback_reason else {}),
                 **(generation_overrides or {}),
             },
             created_by=created_by.id if created_by else None,
@@ -318,3 +347,69 @@ class AIService:
             f"narrative_context={case.narrative_context or 'N/A'}\n"
             f"transactions:\n{transactions_text}"
         )
+
+    @staticmethod
+    def _build_fallback_draft(
+        *,
+        case: CaseModel,
+        analyst_notes: str | None,
+        compliance_context: list[str],
+    ) -> str:
+        transactions = case.transactions[:5]
+        tx_lines = []
+        for transaction in transactions:
+            tx_lines.append(
+                (
+                    f"- {transaction.transaction_id}: {transaction.transaction_type} for "
+                    f"{transaction.amount:,.2f} {transaction.currency} on "
+                    f"{transaction.timestamp.date().isoformat()}"
+                )
+            )
+
+        risk_indicators = [
+            f"- Risk level assessed as {case.risk_level.upper()}.",
+            "- Activity pattern should be reviewed for structuring, layering, or unusual counterparty behavior.",
+        ]
+
+        if transactions and any(transaction.flags for transaction in transactions):
+            risk_indicators.append("- Transaction flags suggest elevated scrutiny is warranted.")
+
+        context_excerpt = compliance_context[0].strip() if compliance_context else "No compliance context retrieved."
+        notes_block = analyst_notes.strip() if analyst_notes else "No analyst notes were provided."
+
+        return (
+            "Suspicious Activity Report\n\n"
+            f"Subject: {case.subject_name}\n"
+            f"Account: {case.subject_account}\n"
+            f"Case Reference: {case.case_reference}\n\n"
+            "Activity Summary:\n"
+            f"{case.narrative_context or 'INSUFFICIENT_INFORMATION'}\n\n"
+            "Transactional Evidence:\n"
+            + ("\n".join(tx_lines) if tx_lines else "- No transactions available.\n")
+            + "\n\nRisk Indicators:\n"
+            + "\n".join(risk_indicators)
+            + "\n\nCompliance Context:\n"
+            + context_excerpt
+            + "\n\nAnalyst Notes:\n"
+            + notes_block
+            + "\n\nFiling Recommendation:\n"
+            "Continue human review and consider filing a SAR if the activity cannot be reasonably explained."
+        )
+
+    @staticmethod
+    def _fallback_confidence(
+        *,
+        case: CaseModel,
+        analyst_notes: str | None,
+        compliance_context: list[str],
+    ) -> float:
+        base = {
+            "high": 0.82,
+            "medium": 0.68,
+            "low": 0.56,
+        }.get(case.risk_level.lower(), 0.62)
+        if analyst_notes:
+            base += 0.03
+        if compliance_context:
+            base += 0.02
+        return min(round(base, 2), 0.9)
